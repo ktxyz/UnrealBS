@@ -1,0 +1,1 @@
+echo "I'm Short step and I succeed!"

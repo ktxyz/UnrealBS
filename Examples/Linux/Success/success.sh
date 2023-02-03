@@ -1,0 +1,1 @@
+echo "Success" >> Example/Output.txt
