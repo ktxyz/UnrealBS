@@ -6,3 +6,6 @@
 
 # TODO
 # Add config
+
+# TODO
+# Fix Worker

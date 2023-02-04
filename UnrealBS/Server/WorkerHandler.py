@@ -67,12 +67,14 @@ class WorkerHandler:
 
     def rpc_update(self, worker_id, status_val):
         try:
+            print(f'UPDATE! - {worker_id} {status_val}')
             self.workers_lock.acquire()
             status = WorkerStatus(status_val)
             self.registered_workers[worker_id].status = status
             print(f'Worker {worker_id} changed status to {status}')
             return True
         except Exception:
+            print('Exception')
             return False
         finally:
             self.workers_lock.release()

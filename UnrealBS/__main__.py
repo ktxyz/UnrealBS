@@ -21,13 +21,13 @@ if __name__ == "__main__":
         if q == "a":
             server.order_handler.enqueue_order(server.recipe_handler.get_recipe('example-success'), {'client': 'test'})
         elif q == "lo":
-            orders = server.order_handler.get_list(active=True)
+            orders = server.order_handler.get_list()
             for order in orders:
-                print(f'Order[{order.id}] status = {order.status}')
+                print(f'Order[{order.id}] status = {order.status.name}')
         elif q == "lw":
             workers = server.worker_handler.get_list(free=False)
             for worker in workers:
-                print(f'Worker[{worker.id}] @ {worker.port} status = {worker.status}')
+                print(f'Worker[{worker.id}] @ {worker.port} status = {worker.status.name}')
 
     server.kill()
     worker.kill()
