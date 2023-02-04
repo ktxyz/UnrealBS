@@ -1,24 +1,21 @@
 import json
 import uuid
-from dataclasses import dataclass
-from enum import Enum, IntEnum
+from enum import Enum
 from threading import Thread, Event
 
 import xmlrpc.client
 from xmlrpc.server import SimpleXMLRPCServer
 
-from UnrealBS.Common import Step, Order, Recipe
+from UnrealBS.Common.Recipes import Recipe
+from UnrealBS.Common.Steps import Step
+from UnrealBS.Common.Orders import Order, OrderStatus
 
 
 class WorkerStatus(Enum):
     FREE = 0,
     BUSY = 1
 
-@dataclass
-class WorkerData:
-    id: str
-    port: int
-    status: WorkerStatus
+
 
 class Worker:
     # TODO
@@ -48,11 +45,12 @@ class Worker:
         self.kill_event.wait()
 
     def rpc_recv_order(self, order_data):
-        json_data = json.loads(order_data)
-        self.current_order = Order(Recipe(json.loads(json_data['recipe'])), json_data['order'])
+        order_data = json.loads(order_data)
+        self.current_order = Order(Recipe(order_data['recipe']), order_data['order'])
         print(f'Worker[{self.id}] got new order {self.current_order.id}')
         with xmlrpc.client.ServerProxy('http://localhost:2137') as proxy:
             proxy.updateWorkerStatus(self.id, WorkerStatus.BUSY.value)
+            proxy.updateOrderStatus(self.current_order.id, OrderStatus.IN_PROGRESS.value)
         return True
 
     def clean_up(self):
