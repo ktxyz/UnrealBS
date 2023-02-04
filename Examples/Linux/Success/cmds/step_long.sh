@@ -5,3 +5,4 @@ for i in {1..100000} ; do
 done
 
 echo "I finished"
+exit 0

@@ -1,1 +1,1 @@
-echo "Failure" >> Example/Output.txt
+echo "Failure" >> Examples/Output.txt

@@ -22,7 +22,7 @@ class Server:
         self.kill_event = Event()
 
         self.recipe_handler = RecipeHandler()
-        self.order_handler = OrderHandler(self.try_startNextOrder)
+        self.order_handler = OrderHandler(self, self.try_startNextOrder)
         self.worker_handler = WorkerHandler(self.try_startNextOrder)
 
         self.rpc_server = SimpleXMLRPCServer(('localhost', 2137))
@@ -57,6 +57,7 @@ class Server:
             try:
                 print(f'Sending order to {worker.id} @ {worker.port}')
                 proxy.receiveOrder(order.as_json(to_str=True))
+                self.worker_handler.assign_order(order.id, worker.id)
             finally:
                 pass
     def kill(self):

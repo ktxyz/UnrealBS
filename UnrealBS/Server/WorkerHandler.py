@@ -1,6 +1,8 @@
 from threading import Lock
 from dataclasses import dataclass
 
+import xmlrpc.client
+
 from UnrealBS.Worker import WorkerStatus
 
 
@@ -17,6 +19,26 @@ class WorkerHandler:
         self.update_callback = update_callback
 
         self.registered_workers = {}
+
+        self.order_map = {}
+
+    def kill_order(self, order_id):
+        try:
+            self.workers_lock.acquire()
+            if order_id in self.order_map.keys():
+                worker_id = self.order_map.pop(order_id)
+                worker = self.registered_workers[worker_id]
+                with xmlrpc.client.ServerProxy(f'http://localhost:{worker.port}') as proxy:
+                    proxy.killOrder()
+        finally:
+            self.workers_lock.release()
+    def assign_order(self, order_id, worker_id):
+        try:
+            self.workers_lock.acquire()
+            if worker_id in self.registered_workers.keys():
+                self.order_map[order_id] = worker_id
+        finally:
+            self.workers_lock.release()
 
     def get_free_worker(self):
         try:
@@ -71,6 +93,7 @@ class WorkerHandler:
             self.workers_lock.acquire()
             status = WorkerStatus(status_val)
             self.registered_workers[worker_id].status = status
+
             print(f'Worker {worker_id} changed status to {status}')
             return True
         except Exception:

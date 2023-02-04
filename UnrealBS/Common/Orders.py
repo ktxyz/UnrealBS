@@ -4,10 +4,12 @@ from enum import IntEnum
 
 
 class OrderStatus(IntEnum):
-    WAITING = 0,
-    IN_PROGRESS = 1,
-    FAILED = 2,
-    COOKED = 3
+    WAITING = 0
+    IN_PROGRESS = 1
+    CANCELLED = 2
+    FAILED = 3
+    TIMEOUT = 4
+    COOKED = 5
 
 
 class Order:

@@ -1,1 +1,1 @@
-echo "Success" >> Example/Output.txt
+echo "Success" >> Examples/Output.txt

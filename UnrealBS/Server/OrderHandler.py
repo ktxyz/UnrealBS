@@ -5,7 +5,8 @@ from UnrealBS.Common.Orders import Order, OrderStatus
 
 
 class OrderHandler:
-    def __init__(self, update_callback):
+    def __init__(self, server, update_callback):
+        self.server = server
         self.orders_lock = Lock()
         self.update_callback = update_callback
 
@@ -44,6 +45,17 @@ class OrderHandler:
         finally:
             self.orders_lock.release()
             self.update_callback()
+
+    def kill_order(self, order_id):
+        orders = self.get_list(True)
+        print(f'KIlling {order_id}')
+        for order in orders:
+            if order.id == order_id:
+                if order.status == OrderStatus.IN_PROGRESS:
+                    print('KILLING IN WORKER_HANDLER!')
+                    self.server.worker_handler.kill_order(order_id)
+                print('SETTING STATUS')
+                self.update_order(order_id, OrderStatus.CANCELLED)
 
     def update_order(self, order_id, status_val):
         try:
