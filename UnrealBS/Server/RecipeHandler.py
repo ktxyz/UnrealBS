@@ -62,6 +62,9 @@ class RecipeHandler:
             directory = self.config.args.recipe_dir
         else:
             directory = os.path.join(cwd, self.config.args.recipe_dir)
+        if os.path.exists(directory) is False:
+            self.config.server_logger.warning(f'Path doesnt, exist. Using [{cwd}]')
+            directory = cwd
         for filename in os.listdir(directory):
             if filename.endswith('.json'):
                 file_path = os.path.join(directory, filename)

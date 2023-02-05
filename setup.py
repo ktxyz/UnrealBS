@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='UnrealBS',
-    version='0.0.1',
+    version='0.0.2',
     packages=['UnrealBS', 'UnrealBS.Common', 'UnrealBS.Server', 'UnrealBS.Worker'],
     url='https://github.com/ktxyz/UnrealBS',
     license='GNU LGPL 2.1',

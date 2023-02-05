@@ -1,3 +1,5 @@
+from threading import Event
+
 import argparse
 import logging
 import sys
@@ -17,6 +19,9 @@ class Config:
         return Config.__instance
 
     def singleton_init(self):
+        self.universal_kill_ct = 0
+        self.universal_kill_ev = Event()
+
         # TODO
         # figure out more pythonic way
         # of handling this shit

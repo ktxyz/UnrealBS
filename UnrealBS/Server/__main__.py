@@ -7,45 +7,51 @@ from UnrealBS.Server import Server
 
 from UnrealBS.Config import Config
 
-KILL_TRIES = 0
 
 def sigterm_handler(signal, frame):
     config = Config()
-    global KILL_TRIES
+    config.universal_kill_ev.set()
+    config.universal_kill_ct += 1
 
-    KILL_TRIES += 1
-
-    if config.args.run_server:
-        config.server_logger.warning('Received SIGTERM, exiting...')
-        config.server.kill()
-        if KILL_TRIES == 3:
-            config.server_logger.error('KILLED 3rd TIME, HARD EXIT')
-
-    if KILL_TRIES == 3:
+    config.server_logger.warning('Received SIGTERM, exiting...')
+    config.server.kill()
+    if config.universal_kill_ct == 3:
+        config.server_logger.error('KILLED 2nd TIME, HARD EXIT')
         sys.exit(-1)
 
 
 def Main():
     config = Config()
-    config.args.run_server = True
 
-    server = Server()
+    try:
+        server = Server()
 
-    # TODO
-    # this is kinda hacky, but needed for API server
-    config.server = server
+        # TODO
+        # this is kinda hacky, but needed for API server
+        config.server = server
 
-    s_thread = Thread(target=server.run)
-    s_thread.start()
+        s_thread = Thread(target=server.run)
+        s_thread.daemon = True
+        s_thread.start()
 
 
-    # Trie to cleanup before sigterm
-    signal.signal(signal.SIGTERM, sigterm_handler)
-    signal.signal(signal.SIGINT, sigterm_handler)
+        # Trie to cleanup before sigterm
+        signal.signal(signal.SIGTERM, sigterm_handler)
+        signal.signal(signal.SIGINT, sigterm_handler)
+        signal.signal(signal.SIGBREAK, sigterm_handler)
+
+        while not config.universal_kill_ev.is_set():
+            pass
+    except InterruptedError:
+        sigterm_handler(None, None)
+    except KeyboardInterrupt:
+        sigterm_handler(None, None)
+    except Exception as e:
+        config.server_logger.error(f'EXCEPTION: {e}')
+        sigterm_handler(None, None)
 
     if s_thread:
         s_thread.join()
-
     config.server_logger.info('[ Bye!!! ]')
 
 
