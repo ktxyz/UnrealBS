@@ -53,7 +53,7 @@ class APIHandler(http.server.BaseHTTPRequestHandler):
                                                       for x in config.server.recipe_handler.get_list()]})
             elif self.path == '/orders':
                 only_active = request_data['only_active']
-                self._send_response(200, {"orders": [{'id': x.id, 'recipe': x.recipe.target, 'status': x.status.name, 'current_step': x.current_step} for x in config.server.order_handler.get_list(only_active)]})
+                self._send_response(200, {"orders": [x.api_json() for x in config.server.order_handler.get_list(only_active)]})
         except Exception as e:
             config.server_logger.error(str(e))
             self._send_response(500, {"error": str(e)})
@@ -82,10 +82,14 @@ class APIHandler(http.server.BaseHTTPRequestHandler):
                 config.server.order_handler.kill_order(order_id)
             elif self.path == '/order':
                 target = request_data['target']
+                schedule = None
+                if 'schedule' in request_data.keys():
+                    schedule = request_data['schedule']
                 config.server.order_handler.enqueue_order(
                     config.server.recipe_handler.get_recipe(target),
                     {
-                        'client': client
+                        'client': client,
+                        'schedule': schedule
                     }
                 )
             self._send_response(200, {"message": "Success"})

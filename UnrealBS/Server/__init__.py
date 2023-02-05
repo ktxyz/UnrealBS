@@ -21,7 +21,7 @@ class Server:
         self.kill_event = Event()
 
         self.order_handler = OrderHandler(self, self.try_startNextOrder)
-        self.worker_handler = WorkerHandler(self.try_startNextOrder)
+        self.worker_handler = WorkerHandler(self, self.try_startNextOrder)
         self.recipe_handler = RecipeHandler(self)
 
         self.rpc_server = SimpleXMLRPCServer((self.config.args.server_host, self.config.args.server_port))
@@ -35,7 +35,7 @@ class Server:
         self.httpd_thread.daemon = True
 
         self.queue_lock = Lock()
-        self.queue_update_interval = 5 * 60  # Check every 5 minutes
+        self.queue_update_interval = 5  # Check every 5 minutes
         self.queue_thread = Thread(target=self.process_queue)
         self.queue_thread.daemon = True
 
@@ -66,6 +66,8 @@ class Server:
                     raise Exception('Worker DIDNT TAKE TASK')
                 else:
                     self.config.server_logger.debug('WORKER TOOK TASK')
+                    # TODO
+                    # Find better to handle this race condition
                     self.worker_handler.rpc_update(worker.id, WorkerStatus.BUSY.value)
                     self.order_handler.update_order(order.id, OrderStatus.IN_PROGRESS.value, order.current_step)
         except Exception as e:

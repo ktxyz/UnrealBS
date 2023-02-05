@@ -15,11 +15,13 @@ class WorkerData:
 
 
 class WorkerHandler:
-    def __init__(self, update_callback):
+    def __init__(self, server, update_callback):
         self.config = Config()
 
         self.workers_lock = Lock()
         self.update_callback = update_callback
+
+        self.server = server
 
         self.registered_workers = {}
 
@@ -87,6 +89,17 @@ class WorkerHandler:
     def rpc_deregister(self, worker_id):
         try:
             self.workers_lock.acquire(timeout=self.config.universal_timeout)
+            if worker_id in self.order_map.values():
+                # TODO
+                # fix this stupid code
+                order_id = None
+                for o_id in self.order_map.keys():
+                    if self.order_map[o_id] == worker_id:
+                        order_id = o_id
+                        break
+                self.server.order_handler.stop_order(order_id)
+                self.config.server_logger.warning('Worker deregistered while running task!')
+
             self.registered_workers.pop(worker_id)
             self.config.server_logger.info(f'Deregistered worker {worker_id}')
             return True

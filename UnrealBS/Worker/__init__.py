@@ -1,20 +1,19 @@
 import json
 import uuid
-from enum import IntEnum
+from enum import IntEnum, auto
 from threading import Thread, Event
 
 import xmlrpc.client
 from xmlrpc.server import SimpleXMLRPCServer
 
-from UnrealBS.Common.Recipes import Recipe
-from UnrealBS.Common.Orders import Order, OrderStatus
+from UnrealBS.Common.Orders import OrderStatus
 from UnrealBS.Config import Config
 from UnrealBS.Worker.OrderHandler import OrderHandler
 
 
 class WorkerStatus(IntEnum):
-    FREE = 0,
-    BUSY = 1
+    FREE = auto()
+    BUSY = auto()
 
 
 class Worker:
@@ -60,7 +59,8 @@ class Worker:
         self.order_handler_thread.join()
 
     def on_killOrder(self):
-        self.config.worker_logger.info('Order was cancelled')
+        if self.order_handler.order is not None:
+            self.config.worker_logger.info('Order was cancelled')
         with xmlrpc.client.ServerProxy(self.server_url) as proxy:
             proxy.updateWorkerStatus(self.id, WorkerStatus.FREE.value)
 

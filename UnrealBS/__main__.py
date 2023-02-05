@@ -10,7 +10,9 @@ from UnrealBS.Config import Config
 
 KILL_TRIES = 0
 
+
 def sigterm_handler(signal, frame):
+    config = Config()
     global KILL_TRIES
 
     KILL_TRIES += 1
@@ -30,7 +32,7 @@ def sigterm_handler(signal, frame):
         sys.exit(-1)
 
 
-if __name__ == "__main__":
+def Main():
     config = Config()
 
     s_thread = None
@@ -63,3 +65,7 @@ if __name__ == "__main__":
         s_thread.join()
     if w_thread:
         w_thread.join()
+
+
+if __name__ == "__main__":
+    Main()
