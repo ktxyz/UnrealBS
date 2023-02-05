@@ -31,7 +31,7 @@ class Order:
             "recipe": self.recipe.as_json(),
             "order": {
                 "client": self.client,
-                "id": self.id
+                "id": self.id,
             }
         }
         if to_str:

@@ -1,6 +1,6 @@
 echo "I'm a long thread"
 
-for i in {1..100000} ; do
+for i in {1..1500} ; do
   echo $i
 done
 

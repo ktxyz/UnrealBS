@@ -1,10 +1,12 @@
 import time
 from threading import Thread
 
+from UnrealBS.Config import Config
 from UnrealBS.Worker.StepHandler import OrderCanceledException
 
 class ProcessHandler:
     def __init__(self, order_handler):
+        self.config = Config()
         self.order_handler = order_handler
 
     def run(self):
@@ -12,26 +14,23 @@ class ProcessHandler:
             try:
                 self.order_handler.order_lock.acquire()
                 if self.order_handler.order is not None:
-                    print('HERE')
-                    self.order_handler.step_handler.handle(self.order_handler.order.recipe.start_step)
-
+                    length = len(self.order_handler.order.recipe.steps)
+                    self.order_handler.step_handler.handle(-1, length, self.order_handler.order.recipe.start_step)
                     for idx, step in enumerate(self.order_handler.order.recipe.steps):
-                        print(f'Running step {idx} or order: {self.order_handler.order.id}')
-                        self.order_handler.step_handler.handle(step)
+                        self.order_handler.step_handler.handle(idx, length, step)
                     self.order_handler.success()
             except OrderCanceledException as e:
-                print('Cancelled, nothing should run after!')
+                self.config.worker_logger.warning('Order cancelled')
                 self.order_handler.clean()
                 self.order_handler.order = None
                 return None
             except TimeoutError:
-                print('Timeout')
+                self.config.worker_logger.error('Order timed-out')
                 # FIXME this is not thread safe!!!!!!!!!
                 self.order_handler.worker.timeout = True
                 self.order_handler.fail()
             except Exception as e:
-                print(f'e - {e}')
-                print('Fail2131')
+                self.config.worker_logger.error(e)
                 self.order_handler.fail()
             finally:
                 self.order_handler.order = None

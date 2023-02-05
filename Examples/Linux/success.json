@@ -1,27 +1,33 @@
 {
   "target": "example-success",
   "start-step": {
-    "cmd": "bash Examples/Linux/Success/start.sh"
+    "cmd": "bash Examples/Linux/Success/start.sh",
+    "name": "start"
   },
   "success-step": {
-    "cmd": "bash Examples/Linux/Success/success.sh"
+    "cmd": "bash Examples/Linux/Success/success.sh",
+    "name": "success"
   },
   "failure-step": {
-    "cmd": "bash Examples/Linux/Success/failure.sh"
+    "cmd": "bash Examples/Linux/Success/failure.sh",
+    "name": "failure"
   },
 
   "steps": [
     {
       "cmd": "bash Examples/Linux/Success/cmds/step_short.sh",
-      "timeout": 10
+      "timeout": 10,
+      "name": "short"
     },
     {
       "cmd": "bash Examples/Linux/Success/cmds/step_medium.sh",
-      "timeout": 10
+      "timeout": 10,
+      "name": "medium"
     },
     {
       "cmd": "bash Examples/Linux/Success/cmds/step_long.sh",
-      "timeout": 10
+      "timeout": 20,
+      "name": "long"
     }
   ]
 }

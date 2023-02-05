@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 import xmlrpc.client
 
+from UnrealBS.Config import Config
 from UnrealBS.Worker import WorkerStatus
 
 
@@ -15,6 +16,8 @@ class WorkerData:
 
 class WorkerHandler:
     def __init__(self, update_callback):
+        self.config = Config()
+
         self.workers_lock = Lock()
         self.update_callback = update_callback
 
@@ -28,7 +31,10 @@ class WorkerHandler:
             if order_id in self.order_map.keys():
                 worker_id = self.order_map.pop(order_id)
                 worker = self.registered_workers[worker_id]
-                with xmlrpc.client.ServerProxy(f'http://localhost:{worker.port}') as proxy:
+                # TODO
+                # for now workers have to all be on ethe same host!
+                # not good, but for now can be!
+                with xmlrpc.client.ServerProxy(f'http://{self.config.args.worker_host}:{worker.port}') as proxy:
                     proxy.killOrder()
         finally:
             self.workers_lock.release()
@@ -36,6 +42,7 @@ class WorkerHandler:
         try:
             self.workers_lock.acquire()
             if worker_id in self.registered_workers.keys():
+                self.config.server_logger.debug(f'Assigning order[{order_id}] to worker[{worker_id}]')
                 self.order_map[order_id] = worker_id
         finally:
             self.workers_lock.release()
@@ -47,7 +54,8 @@ class WorkerHandler:
                 if worker.status == WorkerStatus.FREE:
                     return worker
             return None
-        except Exception:
+        except Exception as e:
+            self.config.server_logger.error(e)
             return None
         finally:
             self.workers_lock.release()
@@ -55,9 +63,8 @@ class WorkerHandler:
     def get_list(self, free=False):
         try:
             self.workers_lock.acquire()
-
             if free is False:
-                return self.registered_workers.values()
+                return list(self.registered_workers.values())
             else:
                 return [x for x in self.registered_workers.values() if x.status == WorkerStatus.FREE]
         finally:
@@ -68,9 +75,10 @@ class WorkerHandler:
             self.workers_lock.acquire()
             worker_data = WorkerData(worker_id, worker_port, WorkerStatus.FREE)
             self.registered_workers[worker_data.id] = worker_data
-            print(f'Registered worker {worker_data.id} at port {worker_data.port}')
+            self.config.server_logger.info(f'Registered worker {worker_data.id} at port {worker_data.port}')
             return True
-        except Exception:
+        except Exception as e:
+            self.config.server_logger.error(e)
             return False
         finally:
             self.workers_lock.release()
@@ -80,24 +88,23 @@ class WorkerHandler:
         try:
             self.workers_lock.acquire()
             self.registered_workers.pop(worker_id)
-            print(f'Deregistered worker {worker_id}')
+            self.config.server_logger.info(f'Deregistered worker {worker_id}')
             return True
-        except Exception:
+        except Exception as e:
+            self.config.server_logger.error(e)
             return False
         finally:
             self.workers_lock.release()
 
     def rpc_update(self, worker_id, status_val):
         try:
-            print(f'UPDATE! - {worker_id} {status_val}')
             self.workers_lock.acquire()
             status = WorkerStatus(status_val)
             self.registered_workers[worker_id].status = status
-
-            print(f'Worker {worker_id} changed status to {status}')
+            self.config.server_logger.info(f'Worker {worker_id} changed status to {status.name}')
             return True
-        except Exception:
-            print('Exception')
+        except Exception as e:
+            self.config.server_logger.error(e)
             return False
         finally:
             self.workers_lock.release()

@@ -3,39 +3,29 @@ from threading import Thread
 from UnrealBS.Server import Server
 from UnrealBS.Worker import Worker
 
+from UnrealBS.Config import Config
 
 if __name__ == "__main__":
-    server = Server()
-    worker = Worker(2137)
+    config = Config()
 
-    s_thread = Thread(target=server.run)
-    w_thread = Thread(target=worker.run)
+    s_thread = None
+    if config.args.run_server:
+        server = Server()
 
+        # TODO
+        # this is kinda hacky, but needed for API server
+        config.server = server
 
-    s_thread.start()
-    w_thread.start()
+        s_thread = Thread(target=server.run)
+        s_thread.start()
 
-    q = ""
-    while q != "q":
-        print('Hello')
-        q = input()
-        print(f'Q: {q}')
-        if q == "a":
-            target = input('which recipe: ')
-            server.order_handler.enqueue_order(server.recipe_handler.get_recipe(target), {'client': 'test'})
-        elif q == "lo":
-            orders = server.order_handler.get_list()
-            for order in orders:
-                print(f'Order[{order.id}] status = {order.status.name}')
-        elif q == "lw":
-            workers = server.worker_handler.get_list(free=False)
-            for worker in workers:
-                print(f'Worker[{worker.id}] @ {worker.port} status = {worker.status.name}')
-        elif q == "k":
-            # order_id = input('which order?: ')
-            # server.order_handler.kill_order(order_id)
+    w_thread = None
+    if config.args.run_worker:
+        worker = Worker()
+        w_thread = Thread(target=worker.run)
+        w_thread.start()
 
-            server.order_handler.kill_order(server.order_handler.get_list()[0].id)
-
-    server.kill()
-    worker.kill()
+    if s_thread:
+        s_thread.join()
+    if w_thread:
+        w_thread.join()
