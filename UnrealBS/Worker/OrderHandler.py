@@ -31,9 +31,11 @@ class OrderHandler:
             order_data = json.loads(order_data)
             self.order = Order(Recipe(order_data['recipe']), order_data['order'])
             self.config.worker_logger.info(f'Got new order {self.order.id}')
-            return True
-        finally:
             self.worker.on_startOrder()
+            return True
+        except Exception as e:
+            self.config.worker_logger.error(f'[ERROR]: {e}')
+            return False
 
     def fail(self):
         self.config.worker_logger.info('Order failed!')
@@ -42,7 +44,7 @@ class OrderHandler:
                 try:
                     self.step_handler.handle('Last', 'All', self.order.recipe.failure_step)
                 except Exception as e:
-                    print(e)
+                    self.config.worker_logger.error(e)
                 self.worker.on_failOrder()
 
     def success(self):
@@ -52,7 +54,7 @@ class OrderHandler:
                 try:
                     self.step_handler.handle('Last', 'All', self.order.recipe.success_step)
                 except Exception as e:
-                    print(e)
+                    self.config.worker_logger.error(e)
                 self.worker.on_cookOrder()
 
     def process(self):

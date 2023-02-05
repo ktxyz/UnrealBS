@@ -1,6 +1,6 @@
-import socketserver
+import time
 from http.server import HTTPServer
-from threading import Thread, Event
+from threading import Thread, Event, Lock
 
 import xmlrpc.client
 from xmlrpc.server import SimpleXMLRPCServer
@@ -18,17 +18,23 @@ class Server:
         self.config = Config()
         self.kill_event = Event()
 
-        self.recipe_handler = RecipeHandler()
         self.order_handler = OrderHandler(self, self.try_startNextOrder)
         self.worker_handler = WorkerHandler(self.try_startNextOrder)
+        self.recipe_handler = RecipeHandler(self)
 
         self.rpc_server = SimpleXMLRPCServer((self.config.args.server_host, self.config.args.server_port))
-
+        self.rpc_thread = Thread(target=self.rpc_server.serve_forever)
+        self.rpc_thread.daemon = True
         self.setup_RPCServer()
 
         self.httpd = HTTPServer((self.config.args.server_host, self.config.args.server_port - 1),
                                 APIHandler)
         self.httpd_thread = Thread(target=self.httpd.serve_forever)
+
+        self.queue_lock = Lock()
+        self.queue_update_interval = 1  # Check every 5 minutes
+        self.queue_thread = Thread(target=self.process_queue)
+        self.queue_thread.daemon = True
 
     def setup_RPCServer(self):
         self.rpc_server.register_function(self.worker_handler.rpc_register, 'registerWorker')
@@ -37,14 +43,7 @@ class Server:
 
         self.rpc_server.register_function(self.order_handler.update_order, 'updateOrderStatus')
 
-        self.rpc_thread = Thread(target=self.rpc_server.serve_forever)
-        self.rpc_thread.daemon = True
-
     def try_startNextOrder(self):
-        # FIXME
-        # its not atomic and i think
-        # it can fail in some esoteric moment
-        # but not for now
         self.config.server_logger.debug('Checking to assign next order')
 
         worker = self.worker_handler.get_free_worker()
@@ -57,13 +56,17 @@ class Server:
             self.config.server_logger.debug('No order is in queue')
             return
 
-        with xmlrpc.client.ServerProxy(f'http://localhost:{worker.port}') as proxy:
-            try:
-                self.config.server_logger.info(f'Sending order[{order.id}] to {worker.id} @ {worker.port}')
-                proxy.receiveOrder(order.as_json(to_str=True))
-                self.worker_handler.assign_order(order.id, worker.id)
-            finally:
-                pass
+        with xmlrpc.client.ServerProxy(f'http://{self.config.args.worker_host}:{worker.port}') as proxy:
+            self.config.server_logger.info(f'Sending order[{order.id}] to {worker.id} @ {worker.port}')
+            proxy.receiveOrder(order.as_json(to_str=True))
+            self.worker_handler.assign_order(order.id, worker.id)
+
+    def process_queue(self):
+        while True:
+            time.sleep(self.queue_update_interval)
+            self.order_handler.refresh_orders()
+            self.try_startNextOrder()
+
     def kill(self):
         self.config.server_logger.warning('Server is killed!')
         self.kill_event.set()
@@ -73,8 +76,12 @@ class Server:
         pass
 
     def run(self):
-        self.config.server_logger.info(f'Starting RPC server @ {self.config.args.server_host}:{self.config.args.server_port}')
+        self.config.server_logger.info(f'Starting queue thread [interval: {self.queue_update_interval}]')
+        self.queue_thread.start()
+        self.config.server_logger.info(
+            f'Starting RPC server @ {self.config.args.server_host}:{self.config.args.server_port}')
         self.rpc_thread.start()
-        self.config.server_logger.info(f'Starting API(JSON) server @ {self.config.args.server_host}:{self.config.args.server_port - 1}')
+        self.config.server_logger.info(
+            f'Starting API(JSON) server @ {self.config.args.server_host}:{self.config.args.server_port - 1}')
         self.httpd_thread.start()
         self.kill_event.wait()

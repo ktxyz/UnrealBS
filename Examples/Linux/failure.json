@@ -13,6 +13,8 @@
     "name": "failure"
   },
 
+  "repeat_times": null,
+
   "steps": [
     {
       "cmd": "bash Examples/Linux/Failure/cmds/step_short.sh",

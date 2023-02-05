@@ -28,7 +28,6 @@ class StepHandler:
         self.order_handler.order.current_step = idx
         self.order_handler.worker.on_startStep()
         self.config.worker_logger.info(f'Running step {idx}/{count} [{step.name}]')
-
         try:
             cmds = step.cmd.split(' ')
             timeout = step.timeout
@@ -89,7 +88,7 @@ class StepHandler:
             raise TimeoutError
 
         except Exception as e:
-            print(e)
+            self.config.worker_logger.error(e)
             raise StepFailedException
     def on_cancel(self):
         self.proc.kill()

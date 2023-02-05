@@ -1,5 +1,7 @@
 {
-  "target": "example-success",
+  "target": "example-success-repeat",
+
+  "repeat-times": ["0:0"],
 
   "start-step": {
     "cmd": "bash Examples/Linux/Success/start.sh",

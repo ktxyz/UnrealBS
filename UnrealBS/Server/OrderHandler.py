@@ -17,6 +17,9 @@ class OrderHandler:
         self.orders_history = []
         self.orders_queue = Queue()
 
+        self.orders_scheduled = []
+        self.orders_repeating = []
+
     def has_pending_orders(self):
         return self.orders_queue.empty() is False
 
@@ -37,6 +40,33 @@ class OrderHandler:
                 return all_list
         finally:
             self.orders_lock.release()
+
+    def refresh_orders(self):
+        try:
+            self.orders_lock.acquire()
+
+            for order in self.orders_repeating:
+                if order.recipe.is_time():
+                    new_order = Order(order.recipe, {
+                        'client': 'SERVER-REPEAT'
+                    })
+                    self._enqueue_order(new_order)
+                    order.recipe.reset_time()
+        finally:
+            self.orders_lock.release()
+    def repeat_order(self, recipe):
+        try:
+            self.orders_lock.acquire()
+            order = Order(recipe, {
+                'client': 'SERVER-REPEAT'
+            })
+            self.orders_repeating.append(order)
+        finally:
+            self.orders_lock.release()
+
+    def _enqueue_order(self, new_order):
+        self.orders_active.append(new_order)
+        self.orders_queue.put(new_order)
 
     def enqueue_order(self, recipe, order_data):
         if recipe is None:

@@ -10,8 +10,9 @@ class RecipeNotFound(Exception):
     pass
 
 class RecipeHandler:
-    def __init__(self):
+    def __init__(self, server):
         self.config = Config()
+        self.server = server
 
         self.recipes_lock = Lock()
         self.recipes = []
@@ -47,6 +48,10 @@ class RecipeHandler:
                     return False
 
             self.recipes.append(new_recipe)
+
+            if new_recipe._repeat_times is not None:
+                self.config.server_logger.info(f'Found repeating recipe[{new_recipe.target}]')
+                self.server.order_handler.repeat_order(new_recipe)
             return True
         finally:
             self.recipes_lock.release()

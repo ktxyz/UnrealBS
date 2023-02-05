@@ -26,13 +26,19 @@ class Order:
         self.recipe = recipe
         self.client = order_data['client']
 
+        if 'schedule' in order_data.keys():
+            self.schedule = order_data['schedule']
+        else:
+            self.schedule = None
+
     def as_json(self, to_str=False):
         object_json = {
             "recipe": self.recipe.as_json(),
             "order": {
                 "client": self.client,
                 "id": self.id,
-            }
+            },
+            "schedule": self.schedule
         }
         if to_str:
             return json.dumps(object_json, indent=4)
