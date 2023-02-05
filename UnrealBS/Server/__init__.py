@@ -30,6 +30,7 @@ class Server:
         self.httpd = HTTPServer((self.config.args.server_host, self.config.args.server_port - 1),
                                 APIHandler)
         self.httpd_thread = Thread(target=self.httpd.serve_forever)
+        self.httpd_thread.daemon = True
 
         self.queue_lock = Lock()
         self.queue_update_interval = 1  # Check every 5 minutes

@@ -10,7 +10,7 @@ class ProcessHandler:
         self.order_handler = order_handler
 
     def run(self):
-        while not self.order_handler.worker.kill_event.is_set():
+        while self.order_handler.worker.kill_event.is_set() is False:
             try:
                 self.order_handler.order_lock.acquire()
                 if self.order_handler.order is not None:
@@ -30,7 +30,7 @@ class ProcessHandler:
                 self.order_handler.worker.timeout = True
                 self.order_handler.fail()
             except Exception as e:
-                self.config.worker_logger.error(e)
+                self.config.worker_logger.error(f'Error [{e}]')
                 self.order_handler.fail()
             finally:
                 self.order_handler.order = None

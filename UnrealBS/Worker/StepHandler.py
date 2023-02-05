@@ -19,7 +19,7 @@ class StepHandler:
     def __init__(self, order_handler):
         self.config = Config()
 
-        self.canceled = False
+        self.proc = None
         self.canceled_ev = Event()
 
         self.order_handler = order_handler
@@ -88,7 +88,7 @@ class StepHandler:
             raise TimeoutError
 
         except Exception as e:
-            self.config.worker_logger.error(e)
+            self.config.worker_logger.error(f'Error [{e}]')
             raise StepFailedException
     def on_cancel(self):
         self.proc.kill()
@@ -96,6 +96,6 @@ class StepHandler:
         raise OrderCanceledException
     def kill(self):
         self.config.worker_logger.debug('Kill called!')
-
-        self.proc.kill()
+        if self.proc is not None:
+            self.proc.kill()
         self.canceled_ev.set()

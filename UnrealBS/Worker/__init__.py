@@ -57,7 +57,7 @@ class Worker:
             self.config.worker_logger.error(f'Can\'t conect to server @ {self.server_url}')
             return
         self.kill_event.wait()
-        self.rpc_server_thread.join()
+        self.order_handler_thread.join()
 
     def on_killOrder(self):
         self.config.worker_logger.info('Order was cancelled')
@@ -93,6 +93,7 @@ class Worker:
                                     self.order_handler.order.current_step)
 
     def clean_up(self):
+        self.order_handler.rpc_kill_order()
         with xmlrpc.client.ServerProxy(self.server_url) as proxy:
             proxy.deregisterWorker(self.id)
 

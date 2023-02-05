@@ -55,7 +55,7 @@ class WorkerHandler:
                     return worker
             return None
         except Exception as e:
-            self.config.server_logger.error(e)
+            self.config.server_logger.error(f'Error [{e}]')
             return None
         finally:
             self.workers_lock.release()
@@ -78,7 +78,7 @@ class WorkerHandler:
             self.config.server_logger.info(f'Registered worker {worker_data.id} at port {worker_data.port}')
             return True
         except Exception as e:
-            self.config.server_logger.error(e)
+            self.config.server_logger.error(f'Error [{e}]')
             return False
         finally:
             self.workers_lock.release()
@@ -91,7 +91,7 @@ class WorkerHandler:
             self.config.server_logger.info(f'Deregistered worker {worker_id}')
             return True
         except Exception as e:
-            self.config.server_logger.error(e)
+            self.config.server_logger.error(f'Error [{e}]')
             return False
         finally:
             self.workers_lock.release()
@@ -100,11 +100,13 @@ class WorkerHandler:
         try:
             self.workers_lock.acquire()
             status = WorkerStatus(status_val)
-            self.registered_workers[worker_id].status = status
-            self.config.server_logger.info(f'Worker {worker_id} changed status to {status.name}')
+
+            if worker_id in self.registered_workers.keys():
+                self.registered_workers[worker_id].status = status
+                self.config.server_logger.info(f'Worker {worker_id} changed status to {status.name}')
             return True
         except Exception as e:
-            self.config.server_logger.error(e)
+            self.config.server_logger.error(f'Error [{e}]')
             return False
         finally:
             self.workers_lock.release()

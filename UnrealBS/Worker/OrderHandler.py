@@ -44,7 +44,7 @@ class OrderHandler:
                 try:
                     self.step_handler.handle('Last', 'All', self.order.recipe.failure_step)
                 except Exception as e:
-                    self.config.worker_logger.error(e)
+                    self.config.worker_logger.error(f'Error [{e}]')
                 self.worker.on_failOrder()
 
     def success(self):
@@ -54,7 +54,7 @@ class OrderHandler:
                 try:
                     self.step_handler.handle('Last', 'All', self.order.recipe.success_step)
                 except Exception as e:
-                    self.config.worker_logger.error(e)
+                    self.config.worker_logger.error(f'Error [{e}]')
                 self.worker.on_cookOrder()
 
     def process(self):
