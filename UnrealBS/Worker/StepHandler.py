@@ -68,10 +68,10 @@ class StepHandler:
                 self.on_cancel()
 
             stdout, stderr = self.proc.stdout.read().strip(), self.proc.stderr.read().strip()
-            if stdout != "":
-                self.config.worker_logger.info(f'[OUTPUT]: {stdout}')
-            if stderr != "":
-                self.config.worker_logger.error(f'[OUTPUT-ERR]: {stderr}')
+            # if stdout != "":
+            #     self.config.worker_logger.info(f'[OUTPUT]: {stdout}')
+            # if stderr != "":
+            #     self.config.worker_logger.error(f'[OUTPUT-ERR]: {stderr}')
             exit_val = self.proc.returncode
             self.config.worker_logger.info(f'Step finished [{step.name}]')
 

@@ -66,10 +66,16 @@ class Worker:
 
     def on_startOrder(self):
         self.config.worker_logger.info('Order was started')
-        with xmlrpc.client.ServerProxy(self.server_url) as proxy:
-            proxy.updateWorkerStatus(self.id, WorkerStatus.BUSY.value)
-            proxy.updateOrderStatus(self.order_handler.order.id, OrderStatus.IN_PROGRESS.value,
-                                    self.order_handler.order.current_step)
+        try:
+            with xmlrpc.client.ServerProxy(self.server_url) as proxy:
+                self.config.worker_logger.debug('Updating WorkerStatus')
+                proxy.updateWorkerStatus(self.id, WorkerStatus.BUSY.value)
+                self.config.worker_logger.debug('OrderStatus updated')
+                proxy.updateOrderStatus(self.order_handler.order.id, OrderStatus.IN_PROGRESS.value,
+                                        self.order_handler.order.current_step)
+        except Exception as e:
+            self.config.worker_logger.error(f'Error [{e}]')
+
 
     def on_startStep(self):
         with xmlrpc.client.ServerProxy(self.server_url) as proxy:
@@ -88,9 +94,11 @@ class Worker:
     def on_cookOrder(self):
         self.config.worker_logger.info('Order has been cooked')
         with xmlrpc.client.ServerProxy(self.server_url) as proxy:
-            proxy.updateWorkerStatus(self.id, WorkerStatus.FREE.value)
+            self.config.worker_logger.debug('Updating order status')
             proxy.updateOrderStatus(self.order_handler.order.id, OrderStatus.COOKED.value,
                                     self.order_handler.order.current_step)
+            self.config.worker_logger.debug('Updating worker status')
+            proxy.updateWorkerStatus(self.id, WorkerStatus.FREE.value)
 
     def clean_up(self):
         self.order_handler.rpc_kill_order()

@@ -7,6 +7,9 @@ class Config:
     __instance = None
     LOG_VERBOSITY_CHOICES = ['debug', 'info', 'warning', 'error', 'critical']
 
+    def __init__(self):
+        self.universal_timeout = 1
+
     def __new__(cls):
         if Config.__instance is None:
             Config.__instance = object.__new__(cls)

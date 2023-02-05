@@ -27,15 +27,21 @@ class OrderHandler:
 
     def rpc_recv_order(self, order_data):
         try:
+            self.config.worker_logger.debug('Recv_order called')
+            self.order_lock.acquire(timeout=self.config.universal_timeout)
             self.worker.timeout = False
             order_data = json.loads(order_data)
             self.order = Order(Recipe(order_data['recipe']), order_data['order'])
+            self.config.worker_logger.debug(f'OrderID: {self.order.id}')
+
             self.config.worker_logger.info(f'Got new order {self.order.id}')
-            self.worker.on_startOrder()
             return True
         except Exception as e:
             self.config.worker_logger.error(f'[ERROR]: {e}')
             return False
+        finally:
+            if self.order_lock.locked():
+                self.order_lock.release()
 
     def fail(self):
         self.config.worker_logger.info('Order failed!')

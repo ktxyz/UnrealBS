@@ -5,12 +5,14 @@ from threading import Thread, Event, Lock
 import xmlrpc.client
 from xmlrpc.server import SimpleXMLRPCServer
 
+from UnrealBS.Common.Orders import OrderStatus
 from UnrealBS.Config import Config
 
 from UnrealBS.Server.OrderHandler import OrderHandler
 from UnrealBS.Server.RecipeHandler import RecipeHandler
 from UnrealBS.Server.WorkerHandler import WorkerHandler
 from UnrealBS.Server.APIHandler import APIHandler
+from UnrealBS.Worker import WorkerStatus
 
 
 class Server:
@@ -33,7 +35,7 @@ class Server:
         self.httpd_thread.daemon = True
 
         self.queue_lock = Lock()
-        self.queue_update_interval = 1  # Check every 5 minutes
+        self.queue_update_interval = 5 * 60  # Check every 5 minutes
         self.queue_thread = Thread(target=self.process_queue)
         self.queue_thread.daemon = True
 
@@ -56,11 +58,19 @@ class Server:
         if order is None:
             self.config.server_logger.debug('No order is in queue')
             return
-
-        with xmlrpc.client.ServerProxy(f'http://{self.config.args.worker_host}:{worker.port}') as proxy:
-            self.config.server_logger.info(f'Sending order[{order.id}] to {worker.id} @ {worker.port}')
-            proxy.receiveOrder(order.as_json(to_str=True))
-            self.worker_handler.assign_order(order.id, worker.id)
+        try:
+            with xmlrpc.client.ServerProxy(f'http://{self.config.args.worker_host}:{worker.port}') as proxy:
+                self.config.server_logger.info(f'Sending order[{order.id}] to {worker.id} @ {worker.port}')
+                proxy.receiveOrder(order.as_json(to_str=True))
+                if self.worker_handler.assign_order(order.id, worker.id) is False:
+                    raise Exception('Worker DIDNT TAKE TASK')
+                else:
+                    self.config.server_logger.debug('WORKER TOOK TASK')
+                    self.worker_handler.rpc_update(worker.id, WorkerStatus.BUSY.value)
+                    self.order_handler.update_order(order.id, OrderStatus.IN_PROGRESS.value, order.current_step)
+        except Exception as e:
+            self.config.server_logger.error(f'Error [{e}] - requeuing order [{order.id}]')
+            self.order_handler._enqueue_order(order)
 
     def process_queue(self):
         while True:
@@ -86,3 +96,4 @@ class Server:
             f'Starting API(JSON) server @ {self.config.args.server_host}:{self.config.args.server_port - 1}')
         self.httpd_thread.start()
         self.kill_event.wait()
+        self.config.server_logger.debug('After kill event')

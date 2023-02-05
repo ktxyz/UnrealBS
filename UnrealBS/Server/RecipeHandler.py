@@ -21,14 +21,14 @@ class RecipeHandler:
 
     def get_list(self):
         try:
-            self.recipes_lock.acquire()
+            self.recipes_lock.acquire(timeout=self.config.universal_timeout)
             return self.recipes
         finally:
             self.recipes_lock.release()
 
     def get_recipe(self, target):
         try:
-            self.recipes_lock.acquire()
+            self.recipes_lock.acquire(timeout=self.config.universal_timeout)
 
             for recipe in self.recipes:
                 if recipe.target == target:
@@ -39,7 +39,7 @@ class RecipeHandler:
 
     def learn_recipe(self, recipe_data):
         try:
-            self.recipes_lock.acquire()
+            self.recipes_lock.acquire(timeout=self.config.universal_timeout)
 
             new_recipe = Recipe(recipe_data)
 

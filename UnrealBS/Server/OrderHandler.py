@@ -31,7 +31,7 @@ class OrderHandler:
 
     def get_list(self, active=False):
         try:
-            self.orders_lock.acquire()
+            self.orders_lock.acquire(timeout=self.config.universal_timeout)
             if active:
                 return self.orders_active
             else:
@@ -43,7 +43,7 @@ class OrderHandler:
 
     def refresh_orders(self):
         try:
-            self.orders_lock.acquire()
+            self.orders_lock.acquire(timeout=self.config.universal_timeout)
 
             for order in self.orders_repeating:
                 if order.recipe.is_time():
@@ -56,7 +56,7 @@ class OrderHandler:
             self.orders_lock.release()
     def repeat_order(self, recipe):
         try:
-            self.orders_lock.acquire()
+            self.orders_lock.acquire(timeout=self.config.universal_timeout)
             order = Order(recipe, {
                 'client': 'SERVER-REPEAT'
             })
@@ -73,7 +73,7 @@ class OrderHandler:
             self.config.server_logger.debug('Tried to order None recipe!')
             return
         try:
-            self.orders_lock.acquire()
+            self.orders_lock.acquire(timeout=self.config.universal_timeout)
             new_order = Order(recipe, order_data)
 
             self.orders_active.append(new_order)
@@ -92,7 +92,7 @@ class OrderHandler:
 
     def update_order(self, order_id, status_val, new_step):
         try:
-            self.orders_lock.acquire()
+            self.orders_lock.acquire(timeout=self.config.universal_timeout)
             new_status = OrderStatus(status_val)
 
             for order in self.orders_active:
