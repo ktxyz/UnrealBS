@@ -30,9 +30,10 @@ def sigterm_handler(signum, frame):
 
 def Main():
     config = Config()
+    w_thread = None
+    s_thread = None
 
     try:
-        s_thread = None
         if config.args.run_server:
             server = Server()
 
@@ -47,9 +48,7 @@ def Main():
         # Trie to cleanup before sigterm
         signal.signal(signal.SIGINT, sigterm_handler)
         signal.signal(signal.SIGTERM, sigterm_handler)
-        signal.signal(signal.SIGBREAK, sigterm_handler)
 
-        w_thread = None
         if config.args.run_worker:
             worker = Worker()
 
